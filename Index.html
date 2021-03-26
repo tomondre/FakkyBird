@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FakeMario</title>
+    <style>
+        body {
+            background: red
+        }
+
+        canvas {
+            background: white;
+        }
+
+        #startButton {
+            align-content: center;
+        }
+    </style>
+
+</head>
+<body>
+
+<canvas width="500" height="500"></canvas>
+<button id="startButton">Start the game</button>
+<h2 id="score"></h2>
+<script>
+    var context, controller, rectangle, loop;
+
+    const canvas = document.querySelector("canvas");
+    context = canvas.getContext("2d");
+
+    canvas.height = 600;
+    canvas.width = 800;
+
+    var gameOver = false;
+    var startOfTheGame = true;
+    let score = 0;
+
+    document.getElementById("startButton").onclick = function () {
+        window.requestAnimationFrame(loop)
+    };
+
+    let obstacleGap = 200;
+    let obstacleWidth = 60;
+    let obstacleSpeed = 3;
+
+    rectangle = {
+
+        height: 32,
+        width: 32,
+        x: 10, // center of the canvas
+        x_velocity: 0,
+        y: 0,
+        y_velocity: 0
+
+    };
+
+    let obstacles = [{
+        x: canvas.width,
+        y: randomNumber()
+    }];
+
+    controller = {
+
+        left: false,
+        right: false,
+        up: false,
+        keyListener: function (event) {
+
+            var key_state = (event.type == "keydown") ? true : false;
+
+            switch (event.keyCode) {
+
+                case 38:// up key
+                    controller.up = key_state;
+                    break;
+
+            }
+
+        }
+
+    };
+
+    loop = function () {
+
+        //moves the character
+        move();
+
+        checkCollision();
+
+        //draw the whole frame
+        draw();
+
+        window.requestAnimationFrame(loop);
+
+    };
+
+    function draw() {
+
+        drawRectangle("#202020", 0, 0, canvas.width, canvas.height);
+
+        drawRectangle("#ff0000", rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+
+        drawRectangle("#202830", 0, canvas.height - 20, canvas.width, 10);
+
+        drawObstacles();
+
+    }
+
+    function drawObstacles() {
+        obstacles.forEach((item => {
+            drawRectangle("blue", item.x, item.y, obstacleWidth, canvas.height - item.y)
+            drawRectangle("blue", item.x, 0, obstacleWidth, item.y - obstacleGap)
+        }))
+    }
+
+    function checkCollision() {
+        if (rectangle.y > canvas.height - 20 - rectangle.height) {
+            resetGame();
+        }
+
+        obstacles.forEach((obstacle => {
+
+            let playerRightCornerX = rectangle.x + rectangle.width
+            if (((playerRightCornerX) - obstacle.x) > obstacleSpeed) {
+
+                //Top and bottom obstacle collision check
+                if (rectangle.y - rectangle.height > obstacle.y ||
+                    rectangle.y < obstacle.y - obstacleGap) {
+                    resetGame();
+                }
+            }
+
+            //Check if the obstacle run out of the screen
+            if (obstacle.x + obstacleWidth < rectangle.x) {
+                obstacles.shift();
+
+                let newObstacle = {
+                    x: canvas.width,
+                    y: randomNumber()
+                }
+                score++;
+                document.getElementById("score").innerText = score.toString();
+                obstacles.push(newObstacle)
+            }
+
+            //Add second obstacle when starting game
+            if (startOfTheGame && obstacle.x < canvas.width / 2) {
+                startOfTheGame = false;
+                let newObstacle = {
+                    x: canvas.width,
+                    y: randomNumber()
+                }
+
+                obstacles.push(newObstacle)
+            }
+
+        }))
+    }
+
+    function move() {
+        if (controller.up) {
+
+            rectangle.y_velocity -= 5;
+
+        }
+
+        if (controller.left) {
+
+            rectangle.x_velocity -= 0.5;
+
+        }
+
+        if (controller.right) {
+
+            rectangle.x_velocity += 0.5;
+
+        }
+
+        rectangle.y_velocity += 1;// gravity
+        rectangle.y += rectangle.y_velocity;
+        rectangle.y_velocity *= 0.9;// friction
+
+        //Moves the obstacles
+        obstacles.forEach((item => {
+
+            item.x -= obstacleSpeed;
+
+        }))
+    }
+
+    function drawRectangle(color, x, y, width, height) {
+        context.fillStyle = color;
+        context.fillRect(x, y, width, height);
+    }
+
+    function resetGame() {
+        context.font = "25px Arial";
+        context.fillStyle = "red";
+        context.fillText("Game Over", 100, 100);
+        rectangle = {
+            height: 32,
+            width: 32,
+            x: 10, // center of the canvas
+            x_velocity: 0,
+            y: 0,
+            y_velocity: 0
+        }
+        alert("You lost");
+
+    }
+
+
+    function randomNumber() {
+
+        let temp = Math.floor((Math.random() * (canvas.height - obstacleGap)) + obstacleGap)
+
+        return temp;
+
+    }
+
+    window.addEventListener("keydown", controller.keyListener)
+    window.addEventListener("keyup", controller.keyListener);
+
+</script>
+</body>
+</html>
